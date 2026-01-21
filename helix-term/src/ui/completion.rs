@@ -45,6 +45,18 @@ impl menu::Item for CompletionItem {
             CompletionItem::Other(core::CompletionItem { label, .. }) => label,
         };
 
+        let mut file = std::fs::File::create("mlog.txt").unwrap();
+
+        let other = match self {
+            CompletionItem::Lsp(LspCompletionItem { item, .. }) => match &item.detail {
+                Some(str) => str.clone(),
+                _ => "noowww".to_string(),
+            },
+            _ => "noowww".to_string(),
+        };
+        use std::io::Write;
+        file.write(format!("{:?}", self).as_bytes()).unwrap();
+
         let kind = match self {
             CompletionItem::Lsp(LspCompletionItem { item, .. }) => match item.kind {
                 Some(lsp::CompletionItemKind::TEXT) => "text".into(),
@@ -112,7 +124,11 @@ impl menu::Item for CompletionItem {
             },
         );
 
-        menu::Row::new([menu::Cell::from(label), menu::Cell::from(kind)])
+        menu::Row::new([
+            menu::Cell::from(label),
+            menu::Cell::from(kind),
+            menu::Cell::from(other.len().to_string()),
+        ])
     }
 }
 

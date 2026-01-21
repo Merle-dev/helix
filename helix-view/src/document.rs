@@ -2290,6 +2290,9 @@ impl Document {
     pub fn remove_jump_labels(&mut self, view_id: ViewId) {
         self.jump_labels.remove(&view_id);
     }
+    pub fn has_jump_labels(&self) -> bool {
+        0 != self.jump_labels.len()
+    }
 
     /// Get the inlay hints for this document and `view_id`.
     pub fn inlay_hints(&self, view_id: ViewId) -> Option<&DocumentInlayHints> {

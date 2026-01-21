@@ -118,8 +118,8 @@ impl EditorView {
 
         let syntax_highlighter =
             Self::doc_syntax_highlighter(doc, view_offset.anchor, inner.height, &loader);
-        let mut overlays = Vec::new();
 
+        let mut overlays = Vec::new();
         overlays.push(Self::overlay_syntax_highlights(
             doc,
             view_offset.anchor,
@@ -204,6 +204,7 @@ impl EditorView {
             &text_annotations,
             syntax_highlighter,
             overlays,
+            doc.has_jump_labels(),
             theme,
             decorations,
         );

@@ -36,6 +36,7 @@ pub fn render_document(
     doc_annotations: &TextAnnotations,
     syntax_highlighter: Option<Highlighter<'_>>,
     overlay_highlights: Vec<syntax::OverlayHighlights>,
+    grayed_out: bool,
     theme: &Theme,
     decorations: DecorationManager,
 ) {
@@ -54,6 +55,7 @@ pub fn render_document(
         doc_annotations,
         syntax_highlighter,
         overlay_highlights,
+        grayed_out,
         theme,
         decorations,
     )
@@ -68,6 +70,7 @@ pub fn render_text(
     text_annotations: &TextAnnotations,
     syntax_highlighter: Option<Highlighter<'_>>,
     overlay_highlights: Vec<syntax::OverlayHighlights>,
+    grayed_out: bool,
     theme: &Theme,
     mut decorations: DecorationManager,
 ) {
@@ -139,7 +142,8 @@ pub fn render_text(
             overlay_highlighter.advance();
         }
 
-        let grapheme_style = if let GraphemeSource::VirtualText { highlight } = grapheme.source {
+        let mut grapheme_style = if let GraphemeSource::VirtualText { highlight } = grapheme.source
+        {
             let mut style = renderer.text_style;
             if let Some(highlight) = highlight {
                 style = style.patch(theme.highlight(highlight));
@@ -155,6 +159,9 @@ pub fn render_text(
             }
         };
         decorations.decorate_grapheme(renderer, &grapheme);
+        if grayed_out {
+            grapheme_style.syntax_style.fg = Some(helix_view::theme::Color::Gray);
+        }
 
         let virt = grapheme.is_virtual();
         let grapheme_width = renderer.draw_grapheme(
