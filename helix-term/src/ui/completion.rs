@@ -47,7 +47,7 @@ impl menu::Item for CompletionItem {
         .to_string();
         let max_len = config.unwrap_or(!0);
         if label.len() > max_len {
-            label.truncate(max_len);
+            label.truncate(max_len.saturating_sub(1));
             label.push('…');
         };
 
