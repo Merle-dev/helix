@@ -45,9 +45,9 @@ impl menu::Item for CompletionItem {
             CompletionItem::Other(core::CompletionItem { label, .. }) => label,
         }
         .to_string();
-        let max_len = config.unwrap_or(!0);
+        let max_len = config.unwrap_or(!0) + 3; // "…"" is technically 3 bytes long
         if label.len() > max_len {
-            label.truncate(max_len.saturating_sub(1));
+            label.truncate(max_len);
             label.push('…');
         };
 
