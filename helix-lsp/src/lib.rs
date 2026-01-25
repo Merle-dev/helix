@@ -508,7 +508,9 @@ impl MethodCall {
                 Self::ShowDocument(params)
             }
             lsp::request::WorkspaceDiagnosticRefresh::METHOD => Self::WorkspaceDiagnosticRefresh,
+
             _ => {
+                log::info!("unhandeld method call{}", method);
                 return Err(Error::Unhandled);
             }
         };
@@ -553,6 +555,7 @@ impl Notification {
                 Self::ProgressMessage(params)
             }
             _ => {
+                log::info!("unhandeld notification{}", method);
                 return Err(Error::Unhandled);
             }
         };

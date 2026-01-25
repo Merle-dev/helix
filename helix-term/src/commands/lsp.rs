@@ -1089,6 +1089,30 @@ pub fn hover(cx: &mut Context) {
     });
 }
 
+pub fn code_lens(cx: &mut Context) {
+    let (view, doc) = current!(cx.editor);
+    let mut futures: FuturesOrdered<_> = doc
+        .language_servers_with_feature(LanguageServerFeature::Hover)
+        .map(|language_server| {
+            let server_name = language_server.name().to_string();
+            let request = language_server
+                .text_document_code_lens(doc.identifier(), None)
+                .unwrap();
+            async move { anyhow::Ok((server_name, request.await?)) }
+        })
+        .collect();
+    cx.jobs.callback(async move {
+        while let Some(response) = futures.next().await {
+            match response {
+                Ok(result) => log::info!("{:?}", result),
+                Err(err) => log::error!("{:?}", err),
+            }
+        }
+        let call = move |_: &mut Editor| {};
+        Ok(Callback::Editor(Box::new(call)))
+    });
+}
+
 pub fn rename_symbol(cx: &mut Context) {
     fn get_prefill_from_word_boundary(editor: &Editor) -> String {
         let (view, doc) = current_ref!(editor);

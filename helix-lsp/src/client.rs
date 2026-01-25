@@ -426,6 +426,7 @@ impl Client {
     where
         R::Params: serde::Serialize,
     {
+        log::info!("call {:?}", serde_json::to_string(&params));
         self.call_with_ref::<R>(&params)
     }
 
@@ -436,6 +437,7 @@ impl Client {
     where
         R::Params: serde::Serialize,
     {
+        log::info!("call_ref {:?}", serde_json::to_string(&params));
         self.call_with_timeout::<R>(params, self.req_timeout)
     }
 
@@ -447,6 +449,7 @@ impl Client {
     where
         R::Params: serde::Serialize,
     {
+        log::info!("call_timeout {:?}", serde_json::to_string(&params));
         let server_tx = self.server_tx.clone();
         let id = self.next_request_id();
 
@@ -1183,6 +1186,24 @@ impl Client {
         };
 
         Some(self.call::<lsp::request::HoverRequest>(params))
+    }
+
+    // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_codeLens
+    pub fn text_document_code_lens(
+        &self,
+        text_document: lsp::TextDocumentIdentifier,
+        work_done_token: Option<lsp::ProgressToken>,
+    ) -> Option<impl Future<Output = Result<Option<Vec<lsp::CodeLens>>>>> {
+        let capabilities = self.capabilities.get().unwrap();
+
+        log::info!("{:?}", capabilities.code_lens_provider);
+
+        let params = lsp::CodeLensParams {
+            text_document,
+            work_done_progress_params: lsp::WorkDoneProgressParams { work_done_token },
+            partial_result_params: helix_lsp_types::PartialResultParams::default(),
+        };
+        Some(self.call::<lsp::request::CodeLensRequest>(params))
     }
 
     // formatting

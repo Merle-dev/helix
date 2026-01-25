@@ -770,7 +770,7 @@ impl Application {
                 }
             };
         }
-
+        log::info!("{:?}", call);
         match call {
             Call::Notification(helix_lsp::jsonrpc::Notification { method, params, .. }) => {
                 let notification = match Notification::parse(&method, params) {
