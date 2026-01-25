@@ -589,7 +589,7 @@ struct CodeActionOrCommandItem {
 
 impl ui::menu::Item for CodeActionOrCommandItem {
     type Data = ();
-    fn format(&self, _data: &Self::Data) -> Row<'_> {
+    fn format(&self, _data: &Self::Data, _: Option<usize>) -> Row<'_> {
         match &self.lsp_item {
             lsp::CodeActionOrCommand::CodeAction(action) => action.title.as_str().into(),
             lsp::CodeActionOrCommand::Command(command) => command.title.as_str().into(),

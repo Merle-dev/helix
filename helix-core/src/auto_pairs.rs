@@ -307,18 +307,23 @@ fn handle_close(doc: &Rope, selection: &Selection, pair: &Pair) -> Transaction {
 
     let transaction = Transaction::change_by_selection(doc, selection, |start_range| {
         let cursor = start_range.cursor(doc.slice(..));
-        let next_char = doc.get_char(cursor);
-        let mut len_inserted = 0;
+        // let next_char = doc.get_char(cursor);
+        // let mut len_inserted = 0;
+        let len_inserted = 1;
 
-        let change = if next_char == Some(pair.close) {
-            // return transaction that moves past close
-            (cursor, cursor, None) // no-op
-        } else {
-            len_inserted = 1;
+        // let change = if next_char == Some(pair.close) {
+        //     (cursor, cursor, None) // no-op
+        // } else {
+        //     len_inserted = 1;
+        //     let mut tendril = Tendril::new();
+        //     tendril.push(pair.close);
+        //     (cursor, cursor, Some(tendril))
+        // };
+        let change = (cursor, cursor, {
             let mut tendril = Tendril::new();
             tendril.push(pair.close);
-            (cursor, cursor, Some(tendril))
-        };
+            Some(tendril)
+        });
 
         let next_range = get_next_range(doc, start_range, offs, len_inserted);
         end_ranges.push(next_range);

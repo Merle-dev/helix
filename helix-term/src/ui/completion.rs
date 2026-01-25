@@ -18,7 +18,7 @@ use helix_view::{
 use helix_view::{graphics::Rect, Document, Editor};
 use nucleo::{
     pattern::{Atom, AtomKind, CaseMatching, Normalization},
-    Config, Utf32Str,
+    Utf32Str,
 };
 use tui::text::Spans;
 use tui::{buffer::Buffer as Surface, text::Span};
@@ -28,7 +28,7 @@ use std::cmp::Reverse;
 impl menu::Item for CompletionItem {
     type Data = Style;
 
-    fn format(&self, dir_style: &Self::Data) -> menu::Row<'_> {
+    fn format(&self, dir_style: &Self::Data, config: Option<usize>) -> menu::Row<'_> {
         let deprecated = match self {
             CompletionItem::Lsp(LspCompletionItem { item, .. }) => {
                 item.deprecated.unwrap_or_default()
@@ -40,77 +40,81 @@ impl menu::Item for CompletionItem {
             CompletionItem::Other(_) => false,
         };
 
-        let label = match self {
+        let mut label = match self {
             CompletionItem::Lsp(LspCompletionItem { item, .. }) => item.label.as_str(),
             CompletionItem::Other(core::CompletionItem { label, .. }) => label,
+        }
+        .to_string();
+        let max_len = config.unwrap_or(!0);
+        if label.len() > max_len {
+            label.truncate(max_len);
+            label.push('…');
         };
 
-        let mut file = std::fs::File::create("mlog.txt").unwrap();
-
-        let other = match self {
-            CompletionItem::Lsp(LspCompletionItem { item, .. }) => match &item.detail {
-                Some(str) => str.clone(),
-                _ => "noowww".to_string(),
-            },
-            _ => "noowww".to_string(),
+        let detail = match self {
+            CompletionItem::Lsp(LspCompletionItem { item, .. }) => item.detail.clone(),
+            CompletionItem::Other(_) => None,
         };
-        use std::io::Write;
-        file.write(format!("{:?}", self).as_bytes()).unwrap();
 
-        let kind = match self {
-            CompletionItem::Lsp(LspCompletionItem { item, .. }) => match item.kind {
-                Some(lsp::CompletionItemKind::TEXT) => "text".into(),
-                Some(lsp::CompletionItemKind::METHOD) => "method".into(),
-                Some(lsp::CompletionItemKind::FUNCTION) => "function".into(),
-                Some(lsp::CompletionItemKind::CONSTRUCTOR) => "constructor".into(),
-                Some(lsp::CompletionItemKind::FIELD) => "field".into(),
-                Some(lsp::CompletionItemKind::VARIABLE) => "variable".into(),
-                Some(lsp::CompletionItemKind::CLASS) => "class".into(),
-                Some(lsp::CompletionItemKind::INTERFACE) => "interface".into(),
-                Some(lsp::CompletionItemKind::MODULE) => "module".into(),
-                Some(lsp::CompletionItemKind::PROPERTY) => "property".into(),
-                Some(lsp::CompletionItemKind::UNIT) => "unit".into(),
-                Some(lsp::CompletionItemKind::VALUE) => "value".into(),
-                Some(lsp::CompletionItemKind::ENUM) => "enum".into(),
-                Some(lsp::CompletionItemKind::KEYWORD) => "keyword".into(),
-                Some(lsp::CompletionItemKind::SNIPPET) => "snippet".into(),
-                Some(lsp::CompletionItemKind::COLOR) => item
-                    .documentation
-                    .as_ref()
-                    .and_then(|docs| {
-                        let text = match docs {
-                            lsp::Documentation::String(text) => text,
-                            lsp::Documentation::MarkupContent(lsp::MarkupContent {
-                                value, ..
-                            }) => value,
-                        };
-                        // Language servers which send Color completion items tend to include a 6
-                        // digit hex code at the end for the color. The extra 1 digit is for the '#'
-                        text.get(text.len().checked_sub(7)?..)
-                    })
-                    .and_then(|c| Color::from_hex(c).ok())
-                    .map_or("color".into(), |color| {
-                        Spans::from(vec![
-                            Span::raw("color "),
-                            Span::styled("■", Style::default().fg(color)),
-                        ])
-                    }),
-                Some(lsp::CompletionItemKind::FILE) => "file".into(),
-                Some(lsp::CompletionItemKind::REFERENCE) => "reference".into(),
-                Some(lsp::CompletionItemKind::FOLDER) => "folder".into(),
-                Some(lsp::CompletionItemKind::ENUM_MEMBER) => "enum_member".into(),
-                Some(lsp::CompletionItemKind::CONSTANT) => "constant".into(),
-                Some(lsp::CompletionItemKind::STRUCT) => "struct".into(),
-                Some(lsp::CompletionItemKind::EVENT) => "event".into(),
-                Some(lsp::CompletionItemKind::OPERATOR) => "operator".into(),
-                Some(lsp::CompletionItemKind::TYPE_PARAMETER) => "type_param".into(),
-                Some(kind) => {
-                    log::error!("Received unknown completion item kind: {:?}", kind);
-                    "".into()
-                }
-                None => "".into(),
-            },
-            CompletionItem::Other(core::CompletionItem { kind, .. }) => kind.as_ref().into(),
+        let kind = if let Some(detail_text) = detail {
+            Spans::from(detail_text)
+        } else {
+            match self {
+                CompletionItem::Lsp(LspCompletionItem { item, .. }) => match item.kind {
+                    Some(lsp::CompletionItemKind::TEXT) => "text".into(),
+                    Some(lsp::CompletionItemKind::METHOD) => "method".into(),
+                    Some(lsp::CompletionItemKind::FUNCTION) => "function".into(),
+                    Some(lsp::CompletionItemKind::CONSTRUCTOR) => "constructor".into(),
+                    Some(lsp::CompletionItemKind::FIELD) => "field".into(),
+                    Some(lsp::CompletionItemKind::VARIABLE) => "variable".into(),
+                    Some(lsp::CompletionItemKind::CLASS) => "class".into(),
+                    Some(lsp::CompletionItemKind::INTERFACE) => "interface".into(),
+                    Some(lsp::CompletionItemKind::MODULE) => "module".into(),
+                    Some(lsp::CompletionItemKind::PROPERTY) => "property".into(),
+                    Some(lsp::CompletionItemKind::UNIT) => "unit".into(),
+                    Some(lsp::CompletionItemKind::VALUE) => "value".into(),
+                    Some(lsp::CompletionItemKind::ENUM) => "enum".into(),
+                    Some(lsp::CompletionItemKind::KEYWORD) => "keyword".into(),
+                    Some(lsp::CompletionItemKind::SNIPPET) => "snippet".into(),
+                    Some(lsp::CompletionItemKind::COLOR) => item
+                        .documentation
+                        .as_ref()
+                        .and_then(|docs| {
+                            let text = match docs {
+                                lsp::Documentation::String(text) => text,
+                                lsp::Documentation::MarkupContent(lsp::MarkupContent {
+                                    value,
+                                    ..
+                                }) => value,
+                            };
+                            // Language servers which send Color completion items tend to include a 6
+                            // digit hex code at the end for the color. The extra 1 digit is for the '#'
+                            text.get(text.len().checked_sub(7)?..)
+                        })
+                        .and_then(|c| Color::from_hex(c).ok())
+                        .map_or("color".into(), |color| {
+                            Spans::from(vec![
+                                Span::raw("color "),
+                                Span::styled("■", Style::default().fg(color)),
+                            ])
+                        }),
+                    Some(lsp::CompletionItemKind::FILE) => "file".into(),
+                    Some(lsp::CompletionItemKind::REFERENCE) => "reference".into(),
+                    Some(lsp::CompletionItemKind::FOLDER) => "folder".into(),
+                    Some(lsp::CompletionItemKind::ENUM_MEMBER) => "enum_member".into(),
+                    Some(lsp::CompletionItemKind::CONSTANT) => "constant".into(),
+                    Some(lsp::CompletionItemKind::STRUCT) => "struct".into(),
+                    Some(lsp::CompletionItemKind::EVENT) => "event".into(),
+                    Some(lsp::CompletionItemKind::OPERATOR) => "operator".into(),
+                    Some(lsp::CompletionItemKind::TYPE_PARAMETER) => "type_param".into(),
+                    Some(kind) => {
+                        log::error!("Received unknown completion item kind: {:?}", kind);
+                        "".into()
+                    }
+                    None => "".into(),
+                },
+                CompletionItem::Other(core::CompletionItem { kind, .. }) => kind.as_ref().into(),
+            }
         };
 
         let label = Span::styled(
@@ -124,11 +128,7 @@ impl menu::Item for CompletionItem {
             },
         );
 
-        menu::Row::new([
-            menu::Cell::from(label),
-            menu::Cell::from(kind),
-            menu::Cell::from(other.len().to_string()),
-        ])
+        menu::Row::new([menu::Cell::from(label), menu::Cell::from(kind)])
     }
 }
 
@@ -145,7 +145,7 @@ pub struct Completion {
 impl Completion {
     pub const ID: &'static str = "completion";
 
-    pub fn new(editor: &Editor, items: Vec<CompletionItem>, trigger_offset: usize) -> Self {
+    pub fn new(editor: &mut Editor, items: Vec<CompletionItem>, trigger_offset: usize) -> Self {
         let preview_completion_insert = editor.config().preview_completion_insert;
         let replace_mode = editor.config().completion_replace;
 
@@ -339,7 +339,7 @@ impl Completion {
     fn score(&mut self, incremental: bool) {
         let pattern = &self.filter;
         let mut matcher = MATCHER.lock();
-        matcher.config = Config::DEFAULT;
+        matcher.config = nucleo::Config::DEFAULT;
         // slight preference towards prefix matches
         matcher.config.prefer_prefix = true;
         let pattern = Atom::new(
@@ -484,6 +484,14 @@ impl Component for Completion {
 
     fn render(&mut self, area: Rect, surface: &mut Surface, cx: &mut Context) {
         self.popup.render(area, surface, cx);
+        self.popup
+            .contents_mut()
+            .map_on_focused(|option| match option {
+                CompletionItem::Lsp(lsp) => {
+                    self.resolve_handler.ensure_item_resolved(cx.editor, lsp)
+                }
+                CompletionItem::Other(_) => (),
+            });
 
         // if we have a selection, render a markdown popup on top/below with info
         let option = match self.popup.contents_mut().selection_mut() {

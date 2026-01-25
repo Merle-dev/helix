@@ -13,7 +13,7 @@ pub trait Item: Sync + Send + 'static {
     /// Additional editor state that is used for label calculation.
     type Data: Sync + Send + 'static;
 
-    fn format(&self, data: &Self::Data) -> Row<'_>;
+    fn format(&self, data: &Self::Data, config: Option<usize>) -> Row<'_>;
 }
 
 pub type MenuCallback<T> = Box<dyn Fn(&mut Editor, Option<&T>, MenuEvent)>;
@@ -113,10 +113,10 @@ impl<T: Item> Menu<T> {
         let n = self
             .options
             .first()
-            .map(|option| option.format(&self.editor_data).cells.len())
+            .map(|option| option.format(&self.editor_data, None).cells.len())
             .unwrap_or_default();
         let max_lens = self.options.iter().fold(vec![0; n], |mut acc, option| {
-            let row = option.format(&self.editor_data);
+            let row = option.format(&self.editor_data, None);
             // maintain max for each column
             for (acc, cell) in acc.iter_mut().zip(row.cells.iter()) {
                 let width = cell.content.width();
@@ -191,6 +191,13 @@ impl<T: Item> Menu<T> {
     pub fn len(&self) -> usize {
         self.matches.len()
     }
+
+    pub fn map_on_focused(&mut self, f: impl FnMut(&mut T)) {
+        let size = self.size.1 as usize;
+        let start = self.scroll;
+        let end = (self.scroll + size).max(size);
+        self.options[start..end].iter_mut().rev().for_each(f);
+    }
 }
 
 impl<T: Item + PartialEq> Menu<T> {
@@ -240,12 +247,12 @@ impl<T: Item + 'static> Component for Menu<T> {
                 return EventResult::Consumed(close_fn);
             }
             // arrow up/ctrl-p/shift-tab prev completion choice (including updating the doc)
-            shift!(Tab) | key!(Up) | ctrl!('p') => {
+            shift!(Tab) /* | key!(Up) | ctrl!('p') */ => {
                 self.move_up();
                 (self.callback_fn)(cx.editor, self.selection(), MenuEvent::Update);
                 return EventResult::Consumed(None);
             }
-            key!(Tab) | key!(Down) | ctrl!('n') => {
+            key!(Tab) /* | key!(Down) | ctrl!('n') */ => {
                 // arrow down/ctrl-n/tab advances completion choice (including updating the doc)
                 self.move_down();
                 (self.callback_fn)(cx.editor, self.selection(), MenuEvent::Update);
@@ -312,9 +319,9 @@ impl<T: Item + 'static> Component for Menu<T> {
 
         let win_height = area.height as usize;
 
-        let rows = options
-            .iter()
-            .map(|option| option.format(&self.editor_data));
+        let rows = options.iter().map(|option| {
+            option.format(&self.editor_data, Some(cx.editor.config().complete_cutoff))
+        });
         let table = Table::new(rows)
             .style(style)
             .highlight_style(selected)
