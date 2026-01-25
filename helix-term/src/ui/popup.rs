@@ -181,7 +181,7 @@ impl<T: Component> Popup<T> {
         // compute required child size and reclamp
         let (mut width, child_height) = self
             .contents
-            .required_size((max_width, max_height))
+            .required_size((max_width, max_height), None)
             .expect("Component needs required_size implemented in order to be embedded in a popup");
 
         width = width.min(MAX_WIDTH);

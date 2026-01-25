@@ -109,14 +109,19 @@ impl<T: Item> Menu<T> {
         self.adjust_scroll();
     }
 
-    fn recalculate_size(&mut self, viewport: (u16, u16)) {
+    fn recalculate_size(&mut self, viewport: (u16, u16), complete_cutoff: Option<usize>) {
         let n = self
             .options
             .first()
-            .map(|option| option.format(&self.editor_data, None).cells.len())
+            .map(|option| {
+                option
+                    .format(&self.editor_data, complete_cutoff)
+                    .cells
+                    .len()
+            })
             .unwrap_or_default();
         let max_lens = self.options.iter().fold(vec![0; n], |mut acc, option| {
-            let row = option.format(&self.editor_data, None);
+            let row = option.format(&self.editor_data, complete_cutoff);
             // maintain max for each column
             for (acc, cell) in acc.iter_mut().zip(row.cells.iter()) {
                 let width = cell.content.width();
@@ -287,9 +292,13 @@ impl<T: Item + 'static> Component for Menu<T> {
         EventResult::Ignored(None)
     }
 
-    fn required_size(&mut self, viewport: (u16, u16)) -> Option<(u16, u16)> {
+    fn required_size(
+        &mut self,
+        viewport: (u16, u16),
+        complete_cutoff: Option<usize>,
+    ) -> Option<(u16, u16)> {
         if viewport != self.viewport || self.recalculate {
-            self.recalculate_size(viewport);
+            self.recalculate_size(viewport, complete_cutoff);
         }
 
         Some(self.size)

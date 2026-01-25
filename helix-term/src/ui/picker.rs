@@ -1171,7 +1171,11 @@ impl<I: 'static + Send + Sync, D: 'static + Send + Sync> Component for Picker<I,
         self.prompt.cursor(area, editor)
     }
 
-    fn required_size(&mut self, (width, height): (u16, u16)) -> Option<(u16, u16)> {
+    fn required_size(
+        &mut self,
+        (width, height): (u16, u16),
+        _: Option<usize>,
+    ) -> Option<(u16, u16)> {
         self.completion_height = height.saturating_sub(4 + self.header_height());
         Some((width, height))
     }

@@ -379,7 +379,7 @@ impl Component for Markdown {
         par.render(area.inner(margin), surface);
     }
 
-    fn required_size(&mut self, viewport: (u16, u16)) -> Option<(u16, u16)> {
+    fn required_size(&mut self, viewport: (u16, u16), _: Option<usize>) -> Option<(u16, u16)> {
         let padding = 2;
         let contents = self.parse(None);
 

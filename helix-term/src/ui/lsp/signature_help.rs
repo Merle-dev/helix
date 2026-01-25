@@ -165,7 +165,7 @@ impl Component for SignatureHelp {
         sig_doc_para.render(sig_doc_area, surface);
     }
 
-    fn required_size(&mut self, viewport: (u16, u16)) -> Option<(u16, u16)> {
+    fn required_size(&mut self, viewport: (u16, u16), _: Option<usize>) -> Option<(u16, u16)> {
         const PADDING: u16 = 2;
         const SEPARATOR_HEIGHT: u16 = 1;
 

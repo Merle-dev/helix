@@ -45,11 +45,11 @@ impl menu::Item for CompletionItem {
             CompletionItem::Other(core::CompletionItem { label, .. }) => label,
         }
         .to_string();
-        let max_len = config.unwrap_or(!0) + 3; // "…"" is technically 3 bytes long
-        if label.len() > max_len {
-            label.truncate(max_len);
-            label.push('…');
-        };
+        let max_len = config.unwrap_or(!0);
+        if label.chars().count() > max_len {
+            let truncated: String = label.chars().take(max_len.saturating_sub(1)).collect();
+            label = format!("{}…", truncated);
+        }
 
         let detail = match self {
             CompletionItem::Lsp(LspCompletionItem { item, .. }) => item.detail.clone(),
@@ -478,8 +478,8 @@ impl Component for Completion {
         self.popup.handle_event(event, cx)
     }
 
-    fn required_size(&mut self, viewport: (u16, u16)) -> Option<(u16, u16)> {
-        self.popup.required_size(viewport)
+    fn required_size(&mut self, viewport: (u16, u16), _: Option<usize>) -> Option<(u16, u16)> {
+        self.popup.required_size(viewport, None)
     }
 
     fn render(&mut self, area: Rect, surface: &mut Surface, cx: &mut Context) {
@@ -563,7 +563,7 @@ impl Component for Completion {
             let y = popup_area.top();
 
             if let Some((rel_width, rel_height)) =
-                markdown_doc.required_size((doc_width, doc_height))
+                markdown_doc.required_size((doc_width, doc_height), None)
             {
                 doc_width = rel_width.min(doc_width);
                 doc_height = rel_height.min(doc_height);

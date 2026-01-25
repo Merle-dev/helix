@@ -39,7 +39,7 @@ impl Component for Text {
         par.render(area, surface);
     }
 
-    fn required_size(&mut self, viewport: (u16, u16)) -> Option<(u16, u16)> {
+    fn required_size(&mut self, viewport: (u16, u16), _: Option<usize>) -> Option<(u16, u16)> {
         if viewport != self.viewport {
             let width = std::cmp::min(self.contents.width() as u16, viewport.0);
             let height = std::cmp::min(self.contents.height() as u16, viewport.1);

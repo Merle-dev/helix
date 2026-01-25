@@ -48,7 +48,11 @@ impl<T: Component + 'static> Component for Overlay<T> {
         self.content.render(dimensions, frame, ctx)
     }
 
-    fn required_size(&mut self, (width, height): (u16, u16)) -> Option<(u16, u16)> {
+    fn required_size(
+        &mut self,
+        (width, height): (u16, u16),
+        _: Option<usize>,
+    ) -> Option<(u16, u16)> {
         let area = Rect {
             x: 0,
             y: 0,
@@ -57,7 +61,7 @@ impl<T: Component + 'static> Component for Overlay<T> {
         };
         let dimensions = (self.calc_child_size)(area);
         let viewport = (dimensions.width, dimensions.height);
-        let _ = self.content.required_size(viewport)?;
+        let _ = self.content.required_size(viewport, None)?;
         Some((width, height))
     }
 

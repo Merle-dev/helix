@@ -62,7 +62,11 @@ pub trait Component: Any + AnyComponent {
     ///
     /// The returned size might be larger than the viewport if the child is too big to fit.
     /// In this case the parent can use the values to calculate scroll.
-    fn required_size(&mut self, _viewport: (u16, u16)) -> Option<(u16, u16)> {
+    fn required_size(
+        &mut self,
+        _viewport: (u16, u16),
+        complete_cutoff: Option<usize>,
+    ) -> Option<(u16, u16)> {
         None
     }
 
@@ -110,7 +114,7 @@ impl Compositor {
         }
         let size = self.size();
         // trigger required_size on init
-        layer.required_size((size.width, size.height));
+        layer.required_size((size.width, size.height), None);
         self.layers.push(layer);
     }
 

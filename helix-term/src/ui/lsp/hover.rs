@@ -107,7 +107,7 @@ impl Component for Hover {
         contents_para.render(contents_area, surface);
     }
 
-    fn required_size(&mut self, viewport: (u16, u16)) -> Option<(u16, u16)> {
+    fn required_size(&mut self, viewport: (u16, u16), _: Option<usize>) -> Option<(u16, u16)> {
         let max_text_width = viewport.0.saturating_sub(PADDING_HORIZONTAL).clamp(10, 120);
 
         let (header, contents) = self.content();
